@@ -11,7 +11,7 @@ bool serial_open(char* port);
 bool serial_send(uint8_t* data, uint32_t len = 1);
 bool serial_receive(uint8_t* data);
 int get_serial_length();
-void close_handle();
+void close_handle(bool quit_state);
 
 bool into_dfu(uint8_t* receive_arr);
 bool write_que(uint8_t que_number);
@@ -61,14 +61,13 @@ int main(int argc, char* argv[])
     
     if(argv[1] == NULL){
         std::cout<<"port null error.\r\nポート指定エラー\r\n";
-        close_handle();
+        close_handle(true);
     }
 
     bin_file = fopen(argv[2],"rb");
     if(bin_file == NULL){
         std::cout << "Can't open bin file.\r\n" << "binファイルが開けませんでした。\r\n";
-        close_handle();
-        return true;
+        close_handle(true);
     }
 
     uint64_t bin_length = _filelengthi64(_fileno(bin_file));
@@ -76,46 +75,43 @@ int main(int argc, char* argv[])
 
     printf("file size : %d\r\n", bin_length);
     
-    serial_open(argv[1]);
+    if(serial_open(argv[1])){
+        std::cout << "Failed port open. Please check to connect or other apps in use.\r\n"<< "ポートを開けませんでした。 接続、あるいは他のアプリが使用中では無いか確認してください。\r\n";
+        close_handle(true);
+    }
+
     if (into_dfu(receive_data_arr)) {
         std::cout << "Fail Set DFU Mode\r\n" << "DFUモードに入れませんでした。\r\n";
-        close_handle();
-        return true;
+        close_handle(true);
     }
 
     if (get_id(receive_data_arr)) {
         std::cout << "Fail get chip data\r\n" << "データの取得に失敗しました。";
-        close_handle();
-        return true;
+        close_handle(true);
     }
 
     if (receive_data_arr[3] != 72) {
         std::cout << "Fail match ChipID\r\n" << "チップIDが一致しませんでした。";
-        close_handle();
-        return true;
+        close_handle(true);
     }
 
     if (write_flash_cycle(bin_file, bin_length)) {
-        close_handle();
-        return true;
+        close_handle(true);
     }
 
     if (cmd_go(0x08000000, receive_data_arr)) {
         std::cout << "err run prog\r\n";
-        close_handle();
-        return true;
+        close_handle(true);
     }
 
-    close_handle();
-
     std::cout << "\r\nComplete Write!\r\n";
-
-    return false;
+    close_handle(false);
 }
 
-void close_handle(){
+void close_handle(bool quit_state){
     CloseHandle(huart);
     fclose(bin_file);
+    exit(quit_state);
 }
 
 bool serial_open(char* port) {
@@ -144,8 +140,7 @@ bool serial_open(char* port) {
     dcb.fRtsControl = RTS_CONTROL_DISABLE;
     
     if (!SetCommState(huart, &dcb)) {
-        std::cout << "Failed port open. Please check to connect or other apps in use.\r\n";
-        std::cout << "ポートを開けませんでした。　接続、あるいは他のアプリが使用中では無いか確認してください。\r\n";
+        //err com open
         return 1;
     }
 
