@@ -205,6 +205,10 @@ bool receive_check(uint8_t* rec_data_arr, int len = 1) {
         return true;
     }
 
+    if(rec_data_arr[0] != 0x79){
+        return true;
+    }
+
     //printf("receive length %d\r\n", receive_length);
     //for (int i = 0; i < receive_length; i++) {
     //    printf("rec %x : %u\r\n", rec_data_arr[i], rec_data_arr[i]);
