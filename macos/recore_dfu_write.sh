@@ -17,5 +17,5 @@ CURRENT=$(cd $(dirname $0);pwd)
 PORT=$2
 FILEPATH=$3
 
-${CURRENT}/tiny_dfu_write ${PORT} ${FILEPATH} ${ADDRESS}
+${CURRENT}/tiny_dfu_writer ${PORT} ${FILEPATH} ${ADDRESS}
 exit $?
