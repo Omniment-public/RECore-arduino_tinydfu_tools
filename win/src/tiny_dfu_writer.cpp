@@ -1,8 +1,12 @@
-﻿#include <iostream>
+﻿#define _CRT_SECURE_NO_WARNINGS
+
+#include <iostream>
 #include <stdio.h>
 #include <windows.h>
 #include <time.h>
 #include <io.h>
+#include <string.h>
+
 
 //win APIは戻り値が正常=trueの場合があるので注意
 //原則として自前関数は正常=false
@@ -48,7 +52,7 @@ int main(int argc, char* argv[])
     uint8_t receive_data_arr[256];
 
     bool err_flag = false;
-    if(argc != 4){
+    if (argc != 4) {
         return true;
     }
 
@@ -58,14 +62,14 @@ int main(int argc, char* argv[])
 
     //fopen_sはこっち
     //if (fopen_s(&bin_file, argv[2] , "rb") != 0) {
-    
-    if(argv[1] == NULL){
-        std::cout<<"port null error.\r\nポート指定エラー\r\n";
+
+    if (argv[1] == NULL) {
+        std::cout << "port null error.\r\nポート指定エラー\r\n";
         close_handle(true);
     }
 
-    bin_file = fopen(argv[2],"rb");
-    if(bin_file == NULL){
+    bin_file = fopen(argv[2], "rb");
+    if (bin_file == NULL) {
         std::cout << "Can't open bin file.\r\n" << "binファイルが開けませんでした。\r\n";
         close_handle(true);
     }
@@ -74,9 +78,9 @@ int main(int argc, char* argv[])
     rewind(bin_file);
 
     printf("file size : %d\r\n", bin_length);
-    
-    if(serial_open(argv[1])){
-        std::cout << "Failed port open. Please check to connect or other apps in use.\r\n"<< "ポートを開けませんでした。 接続、あるいは他のアプリが使用中では無いか確認してください。\r\n";
+
+    if (serial_open(argv[1])) {
+        std::cout << "Failed port open. Please check to connect or other apps in use.\r\n" << "ポートを開けませんでした。 接続、あるいは他のアプリが使用中では無いか確認してください。\r\n";
         close_handle(true);
     }
 
@@ -108,15 +112,21 @@ int main(int argc, char* argv[])
     close_handle(false);
 }
 
-void close_handle(bool quit_state){
+void close_handle(bool quit_state) {
     CloseHandle(huart);
     fclose(bin_file);
     exit(quit_state);
 }
 
 bool serial_open(char* port) {
+
+    std::string com_port_string = std::string(port);
+    std::string com_name_append = "\\\\.\\";
+    com_port_string = com_name_append + com_port_string;
+    auto port_combine = com_port_string.c_str();
+
     huart = CreateFileA(
-        port,
+        port_combine,
         GENERIC_READ | GENERIC_WRITE,
         0,
         NULL,
@@ -138,8 +148,10 @@ bool serial_open(char* port) {
     dcb.fOutxDsrFlow = false;
     dcb.fDtrControl = DTR_CONTROL_DISABLE;
     dcb.fRtsControl = RTS_CONTROL_DISABLE;
-    
+
     if (!SetCommState(huart, &dcb)) {
+        int err_code = GetLastError();
+        printf("Code %x\r\n",err_code);
         //err com open
         return 1;
     }
@@ -147,7 +159,7 @@ bool serial_open(char* port) {
     DWORD errors;
     COMSTAT comStat;
     ClearCommError(huart, &errors, &comStat);
-    
+
     //GetCommTimeouts( huart, &cto );
     //cto.ReadTotalTimeoutMultiplier = 0;
     //cto.ReadTotalTimeoutConstant = 0;
@@ -155,7 +167,7 @@ bool serial_open(char* port) {
     //cto.WriteTotalTimeoutConstant = 0;
     //cto.ReadTotalTimeoutMultiplier = MAXDWORD;
     //cto.ReadTotalTimeoutConstant = 3000;
-    
+
     return 0;
 }
 
@@ -175,7 +187,7 @@ bool serial_send(uint8_t* data, uint32_t len) {
 }
 
 bool serial_receive(uint8_t* data) {
-    return(!ReadFile(huart,  data, 1, &BytesRead, NULL));
+    return(!ReadFile(huart, data, 1, &BytesRead, NULL));
 }
 
 int get_serial_length() {
@@ -205,7 +217,7 @@ bool receive_check(uint8_t* rec_data_arr, int len = 1) {
         return true;
     }
 
-    if(rec_data_arr[0] != 0x79){
+    if (rec_data_arr[0] != 0x79) {
         return true;
     }
 
@@ -248,27 +260,27 @@ bool into_dfu(uint8_t* receive_arr) {
 
 bool write_que(uint8_t que_number) {
     uint8_t que_data[2] = { que_number,  uint8_t(0xff ^ que_number) };
-    if (serial_send(que_data,2)) {
+    if (serial_send(que_data, 2)) {
         return true;
     }
     return 0;
 }
 
 bool write_que_addr(uint32_t addr) {
-     uint8_t addr_data[5];
-     //uint8_t* addr_data = (uint8_t*)&addr; <-armとエンディアン逆だぁ
+    uint8_t addr_data[5];
+    //uint8_t* addr_data = (uint8_t*)&addr; <-armとエンディアン逆だぁ
 
-     addr_data[3] = addr & 0xff;
-     addr_data[2] = (addr >> 8) & 0xff;
-     addr_data[1] = (addr >> 8 * 2) & 0xff;
-     addr_data[0] = (addr >> 8 * 3) & 0xff;
-     addr_data[4] = addr_data[3] ^ addr_data[2] ^ addr_data[1] ^ addr_data[0];
+    addr_data[3] = addr & 0xff;
+    addr_data[2] = (addr >> 8) & 0xff;
+    addr_data[1] = (addr >> 8 * 2) & 0xff;
+    addr_data[0] = (addr >> 8 * 3) & 0xff;
+    addr_data[4] = addr_data[3] ^ addr_data[2] ^ addr_data[1] ^ addr_data[0];
 
-     if (serial_send(addr_data,5)) {
-         return true;
-     }
+    if (serial_send(addr_data, 5)) {
+        return true;
+    }
 
-     return 0;
+    return 0;
 }
 
 bool get_version(uint8_t* receive_data) {
@@ -286,7 +298,7 @@ bool get_version_protect(uint8_t* receive_data) {
 bool get_id(uint8_t* receive_data) {
     //get id
     write_que(0x02);
-    return receive_check(receive_data);
+    return receive_check(receive_data,5);
 }
 
 bool read_mem_data(uint8_t* receive_data, uint32_t addr, uint8_t len) {
@@ -297,10 +309,10 @@ bool read_mem_data(uint8_t* receive_data, uint32_t addr, uint8_t len) {
     }
 
     write_que_addr(addr);
-    if (receive_check(receive_data)){
+    if (receive_check(receive_data)) {
         return true;
     }
-    
+
     write_que(len);
     if (receive_check(receive_data, len + 2)) {
         return true;
@@ -328,7 +340,7 @@ bool erase_flash_sector(uint32_t page, uint16_t dellen) {
         que_data[3] = page & 0xff;
 
         que_data[4] = que_data[0] ^ que_data[1] ^ que_data[2] ^ que_data[3];
-        if (serial_send(que_data,5)) {
+        if (serial_send(que_data, 5)) {
             return true;
         }
     }
@@ -342,7 +354,7 @@ bool erase_flash_sector(uint32_t page, uint16_t dellen) {
 bool write_flash_data(uint8_t* data, uint32_t addr, uint16_t len) {
     uint8_t receive_data[256];
     //uint8_t send_len = sizeof(data) - 1;
-    uint8_t send_len = uint8_t(len-1);
+    uint8_t send_len = uint8_t(len - 1);
     //printf("send data len : %d\r\n", send_len);
 
     write_que(0x31);
@@ -359,13 +371,13 @@ bool write_flash_data(uint8_t* data, uint32_t addr, uint16_t len) {
     uint8_t chk_sum = send_len;
     uint32_t buf = 0;
     //uint8_t chk_sum;
-    
+
     for (int i = 0; i < len; i++) {
         chk_sum = chk_sum ^ data[i];
     }
 
     serial_send(&send_len);
-    serial_send(data, send_len+1);
+    serial_send(data, send_len + 1);
     serial_send(&chk_sum);
 
     if (receive_check(receive_data)) {
@@ -395,7 +407,7 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
         std::cout << "#";
     }
     std::cout << "\r\nErase Complete\r\n";
-    
+
     std::cout << "Write Data ";
     uint8_t write_data_buffer[256];
 
