@@ -1,4 +1,4 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
 #include <stdio.h>
@@ -53,6 +53,7 @@ int main(int argc, char* argv[])
 
     bool err_flag = false;
     if (argc != 4) {
+        std::cout << "Argument count error.\r\nコマンドライン引数が不足しています。\r\n";
         return true;
     }
 
