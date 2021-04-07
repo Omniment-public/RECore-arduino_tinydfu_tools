@@ -256,30 +256,35 @@ bool write_que_addr(uint32_t addr) {
 
 bool get_version(uint8_t* receive_data) {
     //get chip version
+    //return 15byte
     write_que(0x00);
-    return receive_check(receive_data);
+    return receive_check(receive_data, 15);
 }
 
 bool get_version_protect(uint8_t* receive_data) {
     //get version and protect status
+    //return 5byte
     write_que(0x01);
-    return receive_check(receive_data);
+    return receive_check(receive_data, 5);
 }
 
 bool get_id(uint8_t* receive_data) {
     //get id
+    //return 5byte
     write_que(0x02);
-    return receive_check(receive_data);
+    return receive_check(receive_data, 5);
 }
 
 bool read_mem_data(uint8_t* receive_data, uint32_t addr, uint8_t len) {
     //Read Memory
+    //return 1byte ack
     write_que(0x11);
     if (receive_check(receive_data)) {
         return true;
     }
 
     write_que_addr(addr);
+    //return 1byte ack
     if (receive_check(receive_data)){
         return true;
     }
@@ -296,6 +301,7 @@ bool erase_flash_sector(uint32_t page, uint16_t dellen) {
     uint8_t que_data[7];
 
     write_que(0x44);
+    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
@@ -329,12 +335,13 @@ bool write_flash_data(uint8_t* data, uint32_t addr, uint16_t len) {
     //printf("send data len : %d\r\n", send_len);
 
     write_que(0x31);
+    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
 
     write_que_addr(addr);
-
+    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
@@ -407,11 +414,13 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
 
 bool cmd_go(uint32_t addr, uint8_t* receive_data) {
     write_que(0x21);
+    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
 
     write_que_addr(addr);
+    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
