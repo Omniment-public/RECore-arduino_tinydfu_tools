@@ -23,7 +23,6 @@ bool receive_check(uint8_t* rec_data_arr, int len = 1);
 void close_handle(bool quit_state);
 
 bool into_dfu(uint8_t* receive_arr);
-
 bool write_que(uint8_t que_number);
 bool write_que_addr(uint32_t addr);
 
@@ -55,14 +54,16 @@ int main(int argc, char* argv[])
     uint8_t receive_data_arr[256];
     receive_data_arr[0] = 0xff;
 
-    bool err_flag = false;
-    if(argc != 4){
+    //bool err_flag = false;
+    if(argc < 5){
+        std::cout << "Argument count error.\r\nコマンドライン引数が不足しています。\r\n";
         return 1;
     }
 
     printf("Port %s\r\n", argv[1]);
     printf("File %s\r\n", argv[2]);
     printf("Writre Address %s\r\n", argv[3]);
+    printf("DevID %s\r\n", argv[4]);
     
     if(argv[1] == NULL){
         std::cout<<"port null error.\r\nポート指定エラー\r\n";
@@ -100,7 +101,7 @@ int main(int argc, char* argv[])
         close_handle(true);
     }
 
-    if (receive_data_arr[3] != 72) {
+    if (receive_data_arr[3] != uint8_t(atoi(argv[4]))) {
         std::cout << "Fail match ChipID\r\n" << "チップIDが一致しませんでした。";
         close_handle(true);
     }
@@ -119,7 +120,6 @@ int main(int argc, char* argv[])
 }
 
 void close_handle(bool quit_state){
-    //CloseHandle(huart);
     fclose(bin_file);
     close(huart);
     exit(quit_state);
@@ -193,7 +193,6 @@ bool receive_check(uint8_t* rec_data_arr, int len) {
     
     if(rec_data_arr[0] != 0x79){
         std::cout<<"return data not good\r\n";
-        
         return true;
     }
 
@@ -256,35 +255,30 @@ bool write_que_addr(uint32_t addr) {
 
 bool get_version(uint8_t* receive_data) {
     //get chip version
-    //return 15byte
     write_que(0x00);
-    return receive_check(receive_data, 15);
+    return receive_check(receive_data);
 }
 
 bool get_version_protect(uint8_t* receive_data) {
     //get version and protect status
-    //return 5byte
     write_que(0x01);
-    return receive_check(receive_data, 5);
+    return receive_check(receive_data);
 }
 
 bool get_id(uint8_t* receive_data) {
     //get id
-    //return 5byte
     write_que(0x02);
-    return receive_check(receive_data, 5);
+    return receive_check(receive_data);
 }
 
 bool read_mem_data(uint8_t* receive_data, uint32_t addr, uint8_t len) {
     //Read Memory
-    //return 1byte ack
     write_que(0x11);
     if (receive_check(receive_data)) {
         return true;
     }
 
     write_que_addr(addr);
-    //return 1byte ack
     if (receive_check(receive_data)){
         return true;
     }
@@ -301,7 +295,6 @@ bool erase_flash_sector(uint32_t page, uint16_t dellen) {
     uint8_t que_data[7];
 
     write_que(0x44);
-    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
@@ -335,19 +328,18 @@ bool write_flash_data(uint8_t* data, uint32_t addr, uint16_t len) {
     //printf("send data len : %d\r\n", send_len);
 
     write_que(0x31);
-    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
 
     write_que_addr(addr);
-    //return 1byte ack
+
     if (receive_check(receive_data)) {
         return true;
     }
 
     uint8_t chk_sum = send_len;
-    uint32_t buf = 0;
+    //uint32_t buf = 0;
     //uint8_t chk_sum;
     
     for (int i = 0; i < len; i++) {
@@ -383,6 +375,8 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
     }
     std::cout << "\r\nErase Complete\r\n";
     
+    //write data
+    
     std::cout << "Write Data ";
     uint8_t write_data_buffer[256];
 
@@ -399,8 +393,10 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
             }
         }
         else if (write_length != 256) {
-            if (write_flash_data(write_data_buffer, (0x08000000 + (counter * 256)), write_length)) {
-                return true;
+            if (write_length != 0) {
+                if (write_flash_data(write_data_buffer, (0x08000000 + (counter * 256)), write_length)) {
+                    return true;
+                }
             }
             write_continue = false;
         }
@@ -414,13 +410,11 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
 
 bool cmd_go(uint32_t addr, uint8_t* receive_data) {
     write_que(0x21);
-    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
 
     write_que_addr(addr);
-    //return 1byte ack
     if (receive_check(receive_data)) {
         return true;
     }
