@@ -46,20 +46,23 @@ COMMTIMEOUTS cto;
 
 int main(int argc, char* argv[])
 {
+    //argv
+    //port file_path write_addr dev_id page_size
+
     std::cout << "\r\n---RECore DFU Tool with TinyDFU Write v0.1---\r\n";
     std::cout << "---2021 Omniment Inc.---\r\n";
 
     uint8_t receive_data_arr[256];
 
     bool err_flag = false;
-    if (argc != 4) {
+    if (argc < 5) {
         std::cout << "Argument count error.\r\nコマンドライン引数が不足しています。\r\n";
         return true;
     }
 
     printf("Port %s\r\n", argv[1]);
     printf("File %s\r\n", argv[2]);
-    printf("Writre Address %s\r\n", argv[3]);
+    printf("Write Address %s\r\n", argv[3]);
     printf("DevID %s\r\n", argv[4]);
 
     //fopen_sはこっち
@@ -95,14 +98,15 @@ int main(int argc, char* argv[])
         std::cout << "Fail get chip data\r\n" << "データの取得に失敗しました。";
         close_handle(true);
     }
-
-    if (receive_data_arr[3] != uint8_t(argv[4])) {
+    
+    if (receive_data_arr[3] != uint8_t(atoi(argv[4]))) {
         std::cout << "Fail match ChipID\r\n" << "チップIDが一致しませんでした。";
         close_handle(true);
     }
 
     if (write_flash_cycle(bin_file, bin_length)) {
         close_handle(true);
+        std::cout << "Fail Program Write\r\n" << "プログラムの書き込みに失敗しました。";
     }
 
     if (cmd_go(0x08000000, receive_data_arr)) {
@@ -153,7 +157,7 @@ bool serial_open(char* port) {
 
     if (!SetCommState(huart, &dcb)) {
         int err_code = GetLastError();
-        printf("Code %x\r\n",err_code);
+        printf("Code %x\r\n", err_code);
         //err com open
         return 1;
     }
@@ -211,6 +215,7 @@ bool receive_check(uint8_t* rec_data_arr, int len = 1) {
         receive_length = get_serial_length();
         uint32_t dt = GetTickCount() - start_time;
         if (dt > 3000) {
+            std::cout<<"uart timeout\r\n";
             return true;
         }
     }
@@ -220,6 +225,7 @@ bool receive_check(uint8_t* rec_data_arr, int len = 1) {
     }
 
     if (rec_data_arr[0] != 0x79) {
+        std::cout<<"return data not good\r\n";
         return true;
     }
 
@@ -303,7 +309,7 @@ bool get_id(uint8_t* receive_data) {
     //get id
     //return 5byte
     write_que(0x02);
-    return receive_check(receive_data,5);
+    return receive_check(receive_data, 5);
 }
 
 bool read_mem_data(uint8_t* receive_data, uint32_t addr, uint8_t len) {
@@ -399,13 +405,17 @@ bool write_flash_data(uint8_t* data, uint32_t addr, uint16_t len) {
 bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
     std::cout << "Elase Flash ";
 
+    if (erase_option) {
+
+    }
+    else {
+
+    }
+    
     uint64_t erase_page_num = bin_size / 2048;
     if ((bin_size % 2048) != 0) {
         erase_page_num++;
     }
-
-    uint64_t write_data_num = bin_size / 256;
-    uint64_t write_data_fraction = bin_size % 256;
 
     //erase flash
     for (uint32_t i = 0; i < erase_page_num; i++) {
@@ -415,7 +425,10 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
         }
         std::cout << "#";
     }
+
     std::cout << "\r\nErase Complete\r\n";
+
+    //write data
 
     std::cout << "Write Data ";
     uint8_t write_data_buffer[256];
@@ -433,8 +446,10 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
             }
         }
         else if (write_length != 256) {
-            if (write_flash_data(write_data_buffer, (0x08000000 + (counter * 256)), write_length)) {
-                return true;
+            if (write_length != 0) {
+                if (write_flash_data(write_data_buffer, (0x08000000 + (counter * 256)), write_length)) {
+                    return true;
+                }
             }
             write_continue = false;
         }
