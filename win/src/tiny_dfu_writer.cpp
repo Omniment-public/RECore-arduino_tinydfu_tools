@@ -215,6 +215,7 @@ bool receive_check(uint8_t* rec_data_arr, int len = 1) {
         receive_length = get_serial_length();
         uint32_t dt = GetTickCount() - start_time;
         if (dt > 3000) {
+            std::cout<<"uart timeout\r\n";
             return true;
         }
     }
@@ -224,6 +225,7 @@ bool receive_check(uint8_t* rec_data_arr, int len = 1) {
     }
 
     if (rec_data_arr[0] != 0x79) {
+        std::cout<<"return data not good\r\n";
         return true;
     }
 
@@ -409,13 +411,11 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
     else {
 
     }
+    
     uint64_t erase_page_num = bin_size / 2048;
     if ((bin_size % 2048) != 0) {
         erase_page_num++;
     }
-
-    uint64_t write_data_num = bin_size / 256;
-    uint64_t write_data_fraction = bin_size % 256;
 
     //erase flash
     for (uint32_t i = 0; i < erase_page_num; i++) {
