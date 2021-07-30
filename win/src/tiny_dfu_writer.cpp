@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
     printf("Port %s\r\n", argv[1]);
     printf("File %s\r\n", argv[2]);
     printf("Writre Address %s\r\n", argv[3]);
+    printf("DevID %s\r\n", argv[4]);
 
     //fopen_sはこっち
     //if (fopen_s(&bin_file, argv[2] , "rb") != 0) {
@@ -95,7 +96,7 @@ int main(int argc, char* argv[])
         close_handle(true);
     }
 
-    if (receive_data_arr[3] != 72) {
+    if (receive_data_arr[3] != uint8_t(argv[4])) {
         std::cout << "Fail match ChipID\r\n" << "チップIDが一致しませんでした。";
         close_handle(true);
     }
