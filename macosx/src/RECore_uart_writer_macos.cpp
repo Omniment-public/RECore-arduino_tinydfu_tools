@@ -50,7 +50,7 @@ FILE* bin_file;
 int main(int argc, char* argv[])
 {
     
-    std::cout << "\r\n---RECore DFU Tool with TinyDFU Write v0.1---\r\n";
+    std::cout << "\r\n---RECore DFU Tool with TinyDFU Write v0.0.7---\r\n";
     std::cout << "---2021 Omniment Inc.---\r\n";
 
     uint8_t receive_data_arr[256];
