@@ -38,6 +38,8 @@ bool cmd_go(uint32_t addr, uint8_t* receive_data);
 unsigned long BytesWritten;
 unsigned long BytesRead;
 
+unsigned int bf = TIOCM_RTS;
+
 //debug
 unsigned long count = 0;
 
@@ -207,11 +209,14 @@ bool receive_check(uint8_t* rec_data_arr, int len) {
 bool into_dfu(uint8_t* receive_arr) {
     std::cout << "Start DFU Mode\r\n";
     
+    //reset rts
+    ioctl(huart, TIOCMBIC, &bf);
+    
     ioctl(huart, TIOCSDTR);
     sleep(1);
     
     ioctl(huart,TIOCCDTR);
-    usleep(500000);
+    sleep(3);
     
     //serial受信バッファリセット
     tcflush(huart, TCIFLUSH);
@@ -408,6 +413,7 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
 
 }
 
+
 bool cmd_go(uint32_t addr, uint8_t* receive_data) {
     write_que(0x21);
     if (receive_check(receive_data)) {
@@ -418,6 +424,16 @@ bool cmd_go(uint32_t addr, uint8_t* receive_data) {
     if (receive_check(receive_data)) {
         return true;
     }
+    
+    //set rts
+    ioctl(huart, TIOCMBIS, &bf);
+    //hardreset
+    ioctl(huart, TIOCSDTR);
+    sleep(1);
+    
+    ioctl(huart, TIOCSDTR);
+    sleep(1);
+    
     return 0;
 }
 
@@ -428,5 +444,4 @@ def unprotect_rdp():
     if receive_check(rec):
         return True
     return receive_check(rec)
-
-        */
+ */
