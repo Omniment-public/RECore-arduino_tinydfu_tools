@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     //argv
     //port file_path write_addr dev_id page_size
 
-    std::cout << "\r\n---RECore DFU Tool with TinyDFU Write v0.1---\r\n";
+    std::cout << "\r\n---RECore DFU Tool with TinyDFU Write v0.0.7---\r\n";
     std::cout << "---2021 Omniment Inc.---\r\n";
 
     uint8_t receive_data_arr[256];
@@ -495,5 +495,4 @@ def unprotect_rdp():
     if receive_check(rec):
         return True
     return receive_check(rec)
-
-        */
+*/
