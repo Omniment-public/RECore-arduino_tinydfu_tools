@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+﻿#define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
 #include <stdio.h>
@@ -249,7 +249,7 @@ bool into_dfu(uint8_t* receive_arr) {
     dcb.fDtrControl = DTR_CONTROL_DISABLE;
     dcb.fRtsControl = RTS_CONTROL_DISABLE;
     SetCommState(huart, &dcb);
-    Sleep(500);
+    Sleep(2000);
 
     //serial受信バッファリセット
     PurgeComm(huart, PURGE_RXCLEAR);
@@ -473,6 +473,18 @@ bool cmd_go(uint32_t addr, uint8_t* receive_data) {
     if (receive_check(receive_data)) {
         return true;
     }
+    
+    //mcu reset
+    //boot0 reset
+    dcb.fRtsControl = RTS_CONTROL_ENABLE;
+    //rst reset
+    dcb.fDtrControl = DTR_CONTROL_ENABLE;
+    SetCommState(huart, &dcb);
+    Sleep(500);
+
+    dcb.fDtrControl = DTR_CONTROL_DISABLE;
+    SetCommState(huart, &dcb);
+
     return 0;
 }
 
