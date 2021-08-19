@@ -88,11 +88,20 @@ int main(int argc, char* argv[])
         std::cout << "Failed port open. Please check to connect or other apps in use.\r\n" << "ポートを開けませんでした。 接続、あるいは他のアプリが使用中では無いか確認してください。\r\n";
         close_handle(true);
     }
-
+    /*
+    for (int i = 0; i < 10; i++) {
+        if (!into_dfu(receive_data_arr)) {
+            std::cout << "Fail Set DFU Mode\r\n" << "DFUモードに入れませんでした。\r\n";
+            break;
+            close_handle(true);
+        }
+    }
+    */
     if (into_dfu(receive_data_arr)) {
         std::cout << "Fail Set DFU Mode\r\n" << "DFUモードに入れませんでした。\r\n";
         close_handle(true);
     }
+    
 
     if (get_id(receive_data_arr)) {
         std::cout << "Fail get chip data\r\n" << "データの取得に失敗しました。";
@@ -244,12 +253,7 @@ bool into_dfu(uint8_t* receive_arr) {
     dcb.fDtrControl = DTR_CONTROL_ENABLE;
     dcb.fRtsControl = RTS_CONTROL_DISABLE;
     SetCommState(huart, &dcb);
-    Sleep(500);
-
-    dcb.fDtrControl = DTR_CONTROL_DISABLE;
-    dcb.fRtsControl = RTS_CONTROL_DISABLE;
-    SetCommState(huart, &dcb);
-    Sleep(2000);
+    Sleep(100);
 
     //serial受信バッファリセット
     PurgeComm(huart, PURGE_RXCLEAR);
@@ -478,10 +482,15 @@ bool cmd_go(uint32_t addr, uint8_t* receive_data) {
     //boot0 reset
     dcb.fRtsControl = RTS_CONTROL_ENABLE;
     //rst reset
+    dcb.fDtrControl = DTR_CONTROL_DISABLE;
+    SetCommState(huart, &dcb);
+    Sleep(100);
+
     dcb.fDtrControl = DTR_CONTROL_ENABLE;
     SetCommState(huart, &dcb);
-    Sleep(500);
+    Sleep(100);
 
+    dcb.fRtsControl = RTS_CONTROL_DISABLE;
     dcb.fDtrControl = DTR_CONTROL_DISABLE;
     SetCommState(huart, &dcb);
 

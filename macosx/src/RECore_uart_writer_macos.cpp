@@ -213,10 +213,10 @@ bool into_dfu(uint8_t* receive_arr) {
     ioctl(huart, TIOCMBIC, &bf);
     
     ioctl(huart, TIOCSDTR);
-    sleep(1);
+    usleep(100000);
     
     ioctl(huart,TIOCCDTR);
-    sleep(3);
+    usleep(100000);
     
     //serial受信バッファリセット
     tcflush(huart, TCIFLUSH);
@@ -429,10 +429,8 @@ bool cmd_go(uint32_t addr, uint8_t* receive_data) {
     ioctl(huart, TIOCMBIS, &bf);
     //hardreset
     ioctl(huart, TIOCSDTR);
-    sleep(1);
-    
+    usleep(100000);
     ioctl(huart, TIOCSDTR);
-    sleep(1);
     
     return 0;
 }
