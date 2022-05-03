@@ -50,15 +50,15 @@ FILE* bin_file;
 int main(int argc, char* argv[])
 {
     
-    std::cout << "\r\n---RECore DFU Tool with TinyDFU Write v0.0.7---\r\n";
-    std::cout << "---2021 Omniment Inc.---\r\n";
+    std::cout << "\r\n---RECore DFU Tool with TinyDFU Write v0.0.8---\r\n" << std::flush;
+    std::cout << "---2021 Omniment Inc.---\r\n" << std::flush;
 
     uint8_t receive_data_arr[256];
     receive_data_arr[0] = 0xff;
 
     //bool err_flag = false;
     if(argc < 5){
-        std::cout << "Argument count error.\r\nコマンドライン引数が不足しています。\r\n";
+        std::cout << "Argument count error.\r\nコマンドライン引数が不足しています。\r\n" << std::flush;
         return 1;
     }
 
@@ -68,14 +68,14 @@ int main(int argc, char* argv[])
     printf("DevID %s\r\n", argv[4]);
     
     if(argv[1] == NULL){
-        std::cout<<"port null error.\r\nポート指定エラー\r\n";
+        std::cout<<"port null error.\r\nポート指定エラー\r\n" << std::flush;
         close_handle(true);
     }
 
     bin_file = fopen(argv[2],"rb");
     
     if(bin_file == NULL){
-        std::cout << "Can't open bin file.\r\n" << "binファイルが開けませんでした。\r\n";
+        std::cout << "Can't open bin file.\r\n" << "binファイルが開けませんでした。\r\n" << std::flush;
         close_handle(true);
     }
 
@@ -89,22 +89,22 @@ int main(int argc, char* argv[])
     printf("file size : %llu\r\n", bin_length);
     
     if(serial_open(argv[1])){
-        std::cout << "Failed port open. Please check to connect or other apps in use.\r\n"<< "ポートを開けませんでした。 接続、あるいは他のアプリが使用中では無いか確認してください。\r\n";
+        std::cout << "Failed port open. Please check to connect or other apps in use.\r\n"<< "ポートを開けませんでした。 接続、あるいは他のアプリが使用中では無いか確認してください。\r\n" << std::flush;
         close_handle(true);
     }
     
     if (into_dfu(receive_data_arr)) {
-        std::cout << "Fail Set DFU Mode\r\n" << "DFUモードに入れませんでした。\r\n";
+        std::cout << "Fail Set DFU Mode\r\n" << "DFUモードに入れませんでした。\r\n" << std::flush;
         close_handle(true);
     }
 
     if (get_id(receive_data_arr)) {
-        std::cout << "Fail get chip data\r\n" << "データの取得に失敗しました。";
+        std::cout << "Fail get chip data\r\n" << "データの取得に失敗しました。" << std::flush;
         close_handle(true);
     }
 
     if (receive_data_arr[3] != uint8_t(atoi(argv[4]))) {
-        std::cout << "Fail match ChipID\r\n" << "チップIDが一致しませんでした。";
+        std::cout << "Fail match ChipID\r\n" << "チップIDが一致しませんでした。" << std::flush;
         close_handle(true);
     }
 
@@ -113,11 +113,11 @@ int main(int argc, char* argv[])
     }
 
     if (cmd_go(0x08000000, receive_data_arr)) {
-        std::cout << "err run prog\r\n";
+        std::cout << "err run prog\r\n" << std::flush;
         close_handle(true);
     }
 
-    std::cout << "\r\nComplete Write!\r\n";
+    std::cout << "\r\nComplete Write!\r\n" << std::flush;
     close_handle(false);
 }
 
@@ -181,7 +181,7 @@ bool receive_check(uint8_t* rec_data_arr, int len) {
         ioctl(huart, FIONREAD, &receive_length);
         clock_t dt = clock() - start_time;
         if (dt > 3000000) {
-            std::cout<<"uart timeout\r\n";
+            std::cout<<"uart timeout\r\n" << std::flush;
             return true;
         }
     }
@@ -194,7 +194,7 @@ bool receive_check(uint8_t* rec_data_arr, int len) {
     //printf("data : %x\r\n",rec_data_arr[0]);
     
     if(rec_data_arr[0] != 0x79){
-        std::cout<<"return data not good\r\n";
+        std::cout<<"return data not good\r\n" << std::flush;
         return true;
     }
 
@@ -207,7 +207,7 @@ bool receive_check(uint8_t* rec_data_arr, int len) {
 }
 
 bool into_dfu(uint8_t* receive_arr) {
-    std::cout << "Start DFU Mode\r\n";
+    std::cout << "Start DFU Mode\r\n" << std::flush;
     
     //reset rts
     ioctl(huart, TIOCMBIC, &bf);
@@ -215,7 +215,7 @@ bool into_dfu(uint8_t* receive_arr) {
     ioctl(huart, TIOCSDTR);
     usleep(100000);
     
-    ioctl(huart,TIOCCDTR);
+    ioctl(huart, TIOCCDTR);
     usleep(100000);
     
     //serial受信バッファリセット
@@ -363,7 +363,7 @@ bool write_flash_data(uint8_t* data, uint32_t addr, uint16_t len) {
 }
 
 bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
-    std::cout << "Elase Flash ";
+    std::cout << "Elase Flash " << std::flush;
 
     uint64_t erase_page_num = bin_size / 2048;
     if ((bin_size % 2048) != 0) {
@@ -373,16 +373,16 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
     //erase flash
     for (uint32_t i = 0; i < erase_page_num; i++) {
         if (erase_flash_sector(i, 0)) {
-            std::cout << "error erase flash\r\n";
+            std::cout << "error erase flash\r\n" << std::flush;
             return true;
         }
-        std::cout << "#";
+        std::cout << "#" << std::flush;
     }
-    std::cout << "\r\nErase Complete\r\n";
+    std::cout << "\r\nErase Complete\r\n" << std::flush;
     
     //write data
     
-    std::cout << "Write Data ";
+    std::cout << "Write Data " << std::flush;
     uint8_t write_data_buffer[256];
 
     bool write_continue = true;
@@ -405,7 +405,7 @@ bool write_flash_cycle(FILE* bin, uint64_t bin_size, bool erase_option) {
             }
             write_continue = false;
         }
-        std::cout << "#";
+        std::cout << "#" << std::flush;
         counter++;
     }
 
